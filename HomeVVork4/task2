@@ -1,1 +1,35 @@
+package main
 
+import (
+	"fmt"
+	"sort"
+)
+
+type StructType struct {
+	ID int
+}
+
+func sortedSlice(input []StructType) []StructType {
+	seen := make(map[int]bool)
+	var unique []StructType
+
+	for _, v := range input {
+		if !seen[v.ID] {
+			unique = append(unique, v)
+			seen[v.ID] = true
+		}
+	}
+
+	sort.Slice(unique, func(i, j int) bool {
+		return unique[i].ID < unique[j].ID
+	})
+
+	return unique
+}
+
+func main() {
+	input := []StructType{{11}, {7}, {35}, {2}}
+
+	result := sortedSlice(input)
+	fmt.Println(result)
+}
