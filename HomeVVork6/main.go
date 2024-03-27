@@ -14,17 +14,7 @@ func (p Passenger) Travel(r *route.Route) {
 
 	for _, t := range r.Transports {
 		println("-------------------------")
-		switch t.(type) {
-		case transport.Bus:
-			println("Подорож на автобусі:")
-		case transport.Train:
-			println("Подорож на потязі:")
-		case transport.Plane:
-			println("Подорож на літаку:")
-		default:
-			println("Подорож на невідомому транспорті:")
-		}
-
+		println("Подорож на", t.GetType(), ":")
 		t.BoardPassengers()
 		time.Sleep(2 * time.Second)
 		t.DisembarkPassengers()
