@@ -1,9 +1,15 @@
 package route
 
-import "awesomeProject/transport" 
+import "awesomeProject/transport"
+
+type PublicTransport interface {
+	GetType() string
+	BoardPassengers()
+	DisembarkPassengers()
+}
 
 type Route struct {
-	Transports []transport.PublicTransport 
+	Transports []transport.PublicTransport
 }
 
 func NewRoute() *Route {
@@ -17,16 +23,6 @@ func (r *Route) AddTransport(t transport.PublicTransport) {
 func (r *Route) ShowTransports() {
 	for i, t := range r.Transports {
 		println("Транспортний засіб", i+1)
-		switch t.(type) {
-		case transport.Bus:
-			println("Тип: Автобус")
-		case transport.Train:
-			println("Тип: Потяг")
-		case transport.Plane:
-			println("Тип: Літак")
-		default:
-			println("Тип: Невідомий")
-		}
+		println("Тип:", t.GetType())
 	}
 }
-
