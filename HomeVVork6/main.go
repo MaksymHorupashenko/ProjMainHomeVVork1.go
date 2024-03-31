@@ -1,27 +1,28 @@
 package main
 
 import (
+	"fmt"
+
 	"awesomeProject/route"
 	"awesomeProject/transport"
-	"time"
 )
 
 type Passenger struct{}
 
 func (p Passenger) Travel(r *route.Route) {
-	println("Початок подорожі:")
+	fmt.Println("Початок подорожі:")
 	r.ShowTransports()
 
 	for _, t := range r.Transports {
-		println("-------------------------")
-		println("Подорож на", t.GetType(), ":")
+		fmt.Println("-------------------------")
+		fmt.Printf("Подорож на %s:\n", t.GetType())
 		t.BoardPassengers()
 		time.Sleep(2 * time.Second)
 		t.DisembarkPassengers()
 		time.Sleep(2 * time.Second)
 	}
 
-	println("Кінець подорожі")
+	fmt.Println("Кінець подорожі")
 }
 
 func main() {
@@ -38,4 +39,5 @@ func main() {
 
 	passenger.Travel(r)
 }
+
 
