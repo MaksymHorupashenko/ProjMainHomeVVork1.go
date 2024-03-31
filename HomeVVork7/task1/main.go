@@ -2,12 +2,10 @@ package main
 
 import (
 	"fmt"
-	"sync"
 	"time"
 )
 
-func randomGenerator(ch chan<- int, wg *sync.WaitGroup) {
-	defer wg.Done()
+func randomGenerator(ch chan<- int) {
 	for {
 		randomNumber := generateRandomNumber()
 		ch <- randomNumber
@@ -19,8 +17,7 @@ func generateRandomNumber() int {
 	return time.Now().Nanosecond() % 15
 }
 
-func averageCalculator(input <-chan int, output chan<- float64, wg *sync.WaitGroup) {
-	defer wg.Done()
+func averageCalculator(input <-chan int, output chan<- float64) {
 	sum := 0
 	count := 0
 	for randomNumber := range input {
@@ -31,24 +28,21 @@ func averageCalculator(input <-chan int, output chan<- float64, wg *sync.WaitGro
 	}
 }
 
-func printer(output <-chan float64) {
+func printer(output <-chan float64, done chan<- bool) {
 	for average := range output {
 		fmt.Printf("Середнє значення: %.2f\n", average)
 	}
+	done <- true 
 }
 
 func main() {
-	var wg sync.WaitGroup
 	ch1 := make(chan int)
 	ch2 := make(chan float64)
+	done := make(chan bool) 
 
-	wg.Add(1)
-	go randomGenerator(ch1, &wg)
+	go randomGenerator(ch1)
+	go averageCalculator(ch1, ch2)
+	go printer(ch2, done)
 
-	wg.Add(1)
-	go averageCalculator(ch1, ch2, &wg)
-
-	go printer(ch2)
-
-	wg.Wait()
+	<-done
 }
