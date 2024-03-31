@@ -1,6 +1,10 @@
 package route
 
-import "awesomeProject/transport"
+import (
+	"fmt"
+
+	"awesomeProject/transport"
+)
 
 type PublicTransport interface {
 	GetType() string
@@ -9,20 +13,20 @@ type PublicTransport interface {
 }
 
 type Route struct {
-	Transports []transport.PublicTransport
+	Transports []PublicTransport
 }
 
 func NewRoute() *Route {
 	return &Route{}
 }
 
-func (r *Route) AddTransport(t transport.PublicTransport) {
+func (r *Route) AddTransport(t PublicTransport) {
 	r.Transports = append(r.Transports, t)
 }
 
 func (r *Route) ShowTransports() {
 	for i, t := range r.Transports {
-		println("Транспортний засіб", i+1)
-		println("Тип:", t.GetType())
+		fmt.Printf("Транспортний засіб %d\n", i+1)
+		fmt.Printf("Тип: %s\n", t.GetType())
 	}
 }
