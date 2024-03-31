@@ -13,11 +13,11 @@ func (b Bus) GetType() string {
 }
 
 func (b Bus) BoardPassengers() {
-	println("Пасажири сідають у автобус")
+	fmt.Println("Пасажири сідають у автобус")
 }
 
 func (b Bus) DisembarkPassengers() {
-	println("Пасажири виходять з автобуса")
+	fmt.Println("Пасажири виходять з автобуса")
 }
 
 type Train struct{}
@@ -27,11 +27,11 @@ func (t Train) GetType() string {
 }
 
 func (t Train) BoardPassengers() {
-	println("Пасажири сідають у потяг")
+	fmt.Println("Пасажири сідають у потяг")
 }
 
 func (t Train) DisembarkPassengers() {
-	println("Пасажири виходять з потягу")
+	fmt.Println("Пасажири виходять з потягу")
 }
 
 type Plane struct{}
@@ -41,10 +41,10 @@ func (p Plane) GetType() string {
 }
 
 func (p Plane) BoardPassengers() {
-	println("Пасажири сідають у літак")
+	fmt.Println("Пасажири сідають у літак")
 }
 
 func (p Plane) DisembarkPassengers() {
-	println("Пасажири виходять з літака")
+	fmt.Println("Пасажири виходять з літака")
 }
 
