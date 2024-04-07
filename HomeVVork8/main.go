@@ -1,5 +1,6 @@
 package main
 
+
 import (
 	"context"
 	"fmt"
@@ -27,19 +28,21 @@ func newPlayer(name string) *Player {
 	}
 }
 
-func (p *Player) play(round Round) {
+func (p *Player) play(round Round, answerCh chan int) {
 	fmt.Printf("[%s] Question: %s\n", p.Name, round.Question)
 	for i, option := range round.Options {
 		fmt.Printf("[%s] Option %d: %s\n", p.Name, i+1, option)
 	}
 
-	// Просто для прикладу, гравець вибирає випадкову відповідь
-	ans := rand.Intn(len(round.Options)) + 1
-	if ans == round.Answer {
-		fmt.Printf("[%s] Correct answer!\n", p.Name)
-		p.Score++
-	} else {
-		fmt.Printf("[%s] Wrong answer!\n", p.Name)
+	var ans int
+	select {
+	case ans = <-answerCh:
+		if ans == round.Answer {
+			fmt.Printf("[%s] Correct answer!\n", p.Name)
+			p.Score++
+		} else {
+			fmt.Printf("[%s] Wrong answer!\n", p.Name)
+		}
 	}
 }
 
@@ -64,7 +67,6 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	// Обробка сигналів OS
 	sig := make(chan os.Signal, 1)
 	signal.Notify(sig, syscall.SIGINT, syscall.SIGTERM)
 	go func() {
@@ -73,14 +75,17 @@ func main() {
 		cancel()
 	}()
 
-	// Гравці
 	players := []*Player{
 		newPlayer("Player1"),
 		newPlayer("Player2"),
 		newPlayer("Player3"),
 	}
 
-	// Генерація раундів
+	answerChs := make([]chan int, len(players))
+	for i := range answerChs {
+		answerChs[i] = make(chan int)
+	}
+
 	go func() {
 		ticker := time.NewTicker(5 * time.Second)
 		defer ticker.Stop()
@@ -88,17 +93,40 @@ func main() {
 			select {
 			case <-ticker.C:
 				round := generateRound()
-				for _, player := range players {
-					player.play(round)
+				for i, player := range players {
+					go func(p *Player, round Round, ch chan int) {
+						p.play(round, ch)
+					}(player, round, answerChs[i])
+				}
+				time.Sleep(10 * time.Second) 
+				for _, ch := range answerChs {
+					close(ch) 
+				}
+				answerChs = make([]chan int, len(players)) 
+				for i := range answerChs {
+					answerChs[i] = make(chan int)
 				}
 			case <-ctx.Done():
+				fmt.Println("Гра завершена!")
 				return
 			}
 		}
 	}()
 
-	<-ctx.Done() // Блокуємо головний потік доки не буде скасований контекст
-	fmt.Println("Гра завершена!")
+	for {
+		select {
+		case <-ctx.Done():
+			fmt.Println("Гра завершена!")
+			return
+		default:
+			var input int
+			fmt.Println("Введіть ваш варіант відповіді:")
+			fmt.Scanln(&input)
+			for _, ch := range answerChs {
+				ch <- input
+			}
+		}
+	}
 }
 
 
