@@ -62,10 +62,14 @@ func updateTask(w http.ResponseWriter, r *http.Request) {
 }
 
 func deleteTask(w http.ResponseWriter, r *http.Request) {
-	var taskToDelete Task
-	json.NewDecoder(r.Body).Decode(&taskToDelete)
+	parts := strings.Split(r.URL.Path, "/")
+	taskID, err := strconv.Atoi(parts[len(parts)-1])
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
 	for i, task := range tasks {
-		if task.ID == taskToDelete.ID {
+		if task.ID == taskID {
 			tasks = append(tasks[:i], tasks[i+1:]...)
 			break
 		}
@@ -74,10 +78,14 @@ func deleteTask(w http.ResponseWriter, r *http.Request) {
 }
 
 func markTaskDone(w http.ResponseWriter, r *http.Request) {
-	var taskToUpdate Task
-	json.NewDecoder(r.Body).Decode(&taskToUpdate)
+	parts := strings.Split(r.URL.Path, "/")
+	taskID, err := strconv.Atoi(parts[len(parts)-1])
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
 	for i, task := range tasks {
-		if task.ID == taskToUpdate.ID {
+		if task.ID == taskID {
 			tasks[i].Completed = true
 			break
 		}
@@ -86,10 +94,14 @@ func markTaskDone(w http.ResponseWriter, r *http.Request) {
 }
 
 func markTaskIsnotdone(w http.ResponseWriter, r *http.Request) {
-	var taskToUpdate Task
-	json.NewDecoder(r.Body).Decode(&taskToUpdate)
+	parts := strings.Split(r.URL.Path, "/")
+	taskID, err := strconv.Atoi(parts[len(parts)-1])
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
 	for i, task := range tasks {
-		if task.ID == taskToUpdate.ID {
+		if task.ID == taskID {
 			tasks[i].Completed = false
 			break
 		}
@@ -100,16 +112,48 @@ func markTaskIsnotdone(w http.ResponseWriter, r *http.Request) {
 func main() {
 	tasks = []Task{}
 	currentID = 1
-	
-	http.HandleFunc("/tasks", getTasks)
-	http.HandleFunc("/tasks/add", addTask)
-	http.HandleFunc("/tasks/update", updateTask)
-	http.HandleFunc("/tasks/delete", deleteTask)
-	http.HandleFunc("/tasks/completed", markTaskDone)
-	http.HandleFunc("/tasks/incomplete", markTaskIsnotdone)
-	http.HandleFunc("/tasks/", getTaskByID)
 
-	// Start server
-	fmt.Println("Server starts 8080...")
+	http.HandleFunc("/tasks", func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodGet:
+			getTasks(w, r)
+		case http.MethodPost:
+			addTask(w, r)
+		default:
+			w.WriteHeader(http.StatusMethodNotAllowed)
+		}
+	})
+
+	http.HandleFunc("/tasks/", func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodGet:
+			getTaskByID(w, r)
+		case http.MethodPut:
+			updateTask(w, r)
+		case http.MethodDelete:
+			deleteTask(w, r)
+		default:
+			w.WriteHeader(http.StatusMethodNotAllowed)
+		}
+	})
+
+	http.HandleFunc("/tasks/completed/", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodPut {
+			markTaskDone(w, r)
+		} else {
+			w.WriteHeader(http.StatusMethodNotAllowed)
+		}
+	})
+
+	http.HandleFunc("/tasks/incomplete/", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodPut {
+			markTaskIsnotdone(w, r)
+		} else {
+			w.WriteHeader(http.StatusMethodNotAllowed)
+		}
+	})
+
+	fmt.Println("Server starts on port 8080...")
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
+
