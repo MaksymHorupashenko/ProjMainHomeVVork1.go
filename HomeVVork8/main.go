@@ -1,6 +1,5 @@
 package main
 
-
 import (
 	"context"
 	"fmt"
@@ -28,21 +27,12 @@ func newPlayer(name string) *Player {
 	}
 }
 
-func (p *Player) play(round Round, answerCh chan int) {
-	fmt.Printf("[%s] Question: %s\n", p.Name, round.Question)
-	for i, option := range round.Options {
-		fmt.Printf("[%s] Option %d: %s\n", p.Name, i+1, option)
-	}
-
-	var ans int
-	select {
-	case ans = <-answerCh:
-		if ans == round.Answer {
-			fmt.Printf("[%s] Correct answer!\n", p.Name)
-			p.Score++
-		} else {
-			fmt.Printf("[%s] Wrong answer!\n", p.Name)
-		}
+func (p *Player) play(round Round, answer int) {
+	if answer == round.Answer {
+		fmt.Printf("[%s] Correct answer!\n", p.Name)
+		p.Score++
+	} else {
+		fmt.Printf("[%s] Wrong answer!\n", p.Name)
 	}
 }
 
@@ -71,7 +61,7 @@ func main() {
 	signal.Notify(sig, syscall.SIGINT, syscall.SIGTERM)
 	go func() {
 		<-sig
-		fmt.Println("\nReceived termination signal. Exiting...")
+		fmt.Println("\nОтриманий сигнал завершення.")
 		cancel()
 	}()
 
@@ -81,31 +71,36 @@ func main() {
 		newPlayer("Player3"),
 	}
 
-	answerChs := make([]chan int, len(players))
-	for i := range answerChs {
-		answerChs[i] = make(chan int)
-	}
+	answerCh := make(chan int)
+	defer close(answerCh)
+
+	resultCh := make(chan string)
+	defer close(resultCh)
 
 	go func() {
-		ticker := time.NewTicker(5 * time.Second)
+		ticker := time.NewTicker(10 * time.Second)
 		defer ticker.Stop()
 		for {
 			select {
 			case <-ticker.C:
 				round := generateRound()
-				for i, player := range players {
-					go func(p *Player, round Round, ch chan int) {
-						p.play(round, ch)
-					}(player, round, answerChs[i])
+				fmt.Printf("\nНовий раунд:\nПитання: %s\n", round.Question)
+				for i, option := range round.Options {
+					fmt.Printf("Option %d: %s\n", i+1, option)
 				}
-				time.Sleep(10 * time.Second) 
-				for _, ch := range answerChs {
-					close(ch) 
+
+				for _, player := range players {
+					answer := rand.Intn(len(round.Options)) + 1
+					player.play(round, answer)
 				}
-				answerChs = make([]chan int, len(players)) 
-				for i := range answerChs {
-					answerChs[i] = make(chan int)
+
+				time.Sleep(3 * time.Second)
+				
+				result := ""
+				for _, player := range players {
+					result += fmt.Sprintf("[%s: %d] ", player.Name, player.Score)
 				}
+				resultCh <- result
 			case <-ctx.Done():
 				fmt.Println("Гра завершена!")
 				return
@@ -115,18 +110,12 @@ func main() {
 
 	for {
 		select {
+		case result := <-resultCh:
+			fmt.Println("Результати раунду:", result)
 		case <-ctx.Done():
 			fmt.Println("Гра завершена!")
 			return
-		default:
-			var input int
-			fmt.Println("Введіть ваш варіант відповіді:")
-			fmt.Scanln(&input)
-			for _, ch := range answerChs {
-				ch <- input
-			}
 		}
 	}
 }
-
 
