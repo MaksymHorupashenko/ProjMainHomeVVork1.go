@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-const passwordsFile = "data/passwords.txt"
+const passwordsFile = "passwords.txt"
 
 func main() {
 	for {
